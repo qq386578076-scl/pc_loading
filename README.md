@@ -6,7 +6,13 @@ loading加载
 
 适用于 Vue 2.7 的单文件组件。直接复制源码到现有 Vue 项目使用，无额外 UI 库依赖，不是已发布的 npm 包。
 
-> 当前为原始组件的文档化版本，未修复已知缺陷，不应直接视为生产就绪。不要在不了解下方限制时直接替换业务加载逻辑。
+> 当前版本已更新动画样式，尚未修复已知状态管理缺陷，不应直接视为生产就绪。不要在不了解下方限制时直接替换业务加载逻辑。
+
+## 本次更新（2026-11-23）
+
+中心圆点改为 12 × 6px 椭圆，采用 1.8 秒柔和呼吸，透明度 0.55～0.95、缩放 0.85～1.05，八个椭圆通过负延迟错峰。恢复圆环与文字光晕，遮罩淡入淡出调整为 0.4 秒，默认尺寸调整为 120px，large 为 144px。
+
+完整前后对比、兼容影响与验证范围见 [CHANGELOG.md](./CHANGELOG.md)。这些动画参数目前通过组件 CSS 调整，未新增对应 Props。
 
 ## 文件
 
@@ -56,9 +62,9 @@ export default {
 | --- | --- | --- | --- |
 | loading | Boolean | false | 受控开关。true 开始加载，false 结束；一个布尔值只能代表一个聚合状态，不会自动统计并发请求。 |
 | delay | Number | 300 | 开始后延迟多少毫秒显示；延迟内结束则不显示。0 表示立即显示。 |
-| minDuration | Number | 200 | 实际显示后至少保留多少毫秒；另外有约 300ms 淡出动画。 |
+| minDuration | Number | 200 | 实际显示后至少保留多少毫秒；另外有约 400ms 淡出动画（减少动态效果模式下禁用过渡）。 |
 | timeout | Number | 20000 | 遮罩显示后多少毫秒强制隐藏并触发 timeout；0 关闭超时。不是网络超时，不取消请求、不清零计数。 |
-| size | String / Number | 'default' | small=64、default=96、large=120；数字为 spinner 缩放基准像素，最低缩放为 0.4。整个 loading-box 包含文字一起缩放；不是容器尺寸。未知字符串回退 default。 |
+| size | String / Number | 'default' | small=64、default=120、large=144；数字为 spinner 缩放基准像素，最低缩放为 0.4。整个 loading-box 包含文字一起缩放；不是容器尺寸。未知字符串回退 default。 |
 | fullscreen | Boolean | true | true 为视口 fixed 遮罩；false 为包裹默认插槽的局部绝对定位遮罩。局部容器须有稳定高度。 |
 | lock | Boolean | true | 全屏展示时添加 body 滚动锁。false 只关闭滚动锁，遮罩仍拦截指针点击；局部模式不锁滚动。 |
 | text | String | '数据加载中' | spinner 文本及辅助朗读文本。 |
@@ -111,7 +117,7 @@ export default {
 4. 骨架不参与占位；内容区须预留稳定尺寸，不能保证任意内容没有布局跳动。
 5. 遮罩拦截指针，不限制背景键盘焦点；局部模式不锁容器滚动。动态切换 lock/fullscreen 不会完整同步滚动锁。
 6. zIndex 初始化后不更新；delay/minDuration/timeout 等没有完整动态重配置和输入校验。
-7. 有 role=status、aria-live 和减少动态效果样式，但可能重复朗读；减少动态效果下仍有缓慢旋转。
+7. 有 role=status、aria-live 和减少动态效果样式，但可能重复朗读；减少动态效果下仍有缓慢旋转和中心椭圆呼吸；文字省略号动画与遮罩过渡被禁用。
 8. SSR 初始隐藏并在 mounted 后显示，但未进行真实 SSR/SSG 水合验证。fixed 遮罩也可能受祖先 transform 或层叠上下文影响。
 9. transform/opacity 动画不能保证页面无掉帧，仍需结合地图、图表等业务进行性能测量。
 
