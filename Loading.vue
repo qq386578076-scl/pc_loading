@@ -53,7 +53,8 @@
 
 <script>
 // 尺寸档位 -> 基准像素（spinner 原始设计为 120px，通过 scale 统一缩放避免重写关键帧）
-const SIZE_MAP = { small: 64, default: 96, large: 120 };
+// default 对齐 index.vue 的 120px，保证默认观感一致
+const SIZE_MAP = { small: 64, default: 120, large: 144 };
 const BASE_SIZE = 120;
 // 模块级引用计数：多个实例/多个请求共用同一份 body 滚动锁，避免互相解锁
 let bodyLockCount = 0;
@@ -130,6 +131,9 @@ export default {
             };
         },
         scaleStyle() {
+            // 默认尺寸(1:1)时不施加任何 transform，保证与 index.vue 的动画合成路径完全一致，
+            // 避免多余的变换层导致子元素动画被提升为不重绘的合成层
+            if (Math.abs(this.scale - 1) < 0.001) return {};
             return { transform: `scale(${this.scale})` };
         },
         hasSkeleton() {
@@ -343,8 +347,6 @@ export default {
     align-items: center;
     /* 问题8：遮罩层拦截所有指针事件，背景不可点击 */
     pointer-events: auto;
-    /* 性能：限制重绘范围 */
-    contain: layout style paint;
 }
 
 /* 局部模式：改为相对容器绝对定位，只覆盖内容区 */
@@ -362,7 +364,6 @@ export default {
     justify-content: center;
     align-items: center;
     transform-origin: center center;
-    will-change: transform;
 }
 
 .loading-spinner {
@@ -378,8 +379,6 @@ export default {
     position: absolute;
     border-radius: 50%;
     border: 3px solid transparent;
-    /* 问题6：仅使用 transform 动画，GPU 合成，避免掉帧 */
-    will-change: transform;
 }
 
 .spinner-ring--outer {
@@ -388,6 +387,7 @@ export default {
     border-top-color: #53aaf9;
     border-right-color: #53aaf9;
     animation: spin 1.5s linear infinite;
+    box-shadow: 0 0 20px rgba(83, 170, 249, 0.4), inset 0 0 20px rgba(83, 170, 249, 0.1);
 }
 
 .spinner-ring--inner {
@@ -396,6 +396,7 @@ export default {
     border-bottom-color: #00e5ff;
     border-left-color: #00e5ff;
     animation: spin 1s linear infinite reverse;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.1);
 }
 
 .spinner-core {
@@ -406,21 +407,22 @@ export default {
 
 .spinner-dot {
     position: absolute;
-    width: 9px;
-    height: 8px;
+    width: 12px;
+    height: 6px;
     background: #53aaf9;
     border-radius: 50%;
     top: 50%;
     left: 50%;
-    margin: -4px 0 0 -4px;
-    animation: dotPulse 1.2s ease-in-out infinite;
-    animation-delay: calc((var(--i) - 1) * 0.15s);
+    margin: -3px 0 0 -6px;
+    animation: dotPulse 1.8s ease-in-out infinite;
+    animation-delay: calc((var(--i) - 1) * -0.225s);
     transform: rotate(calc((var(--i) - 1) * 45deg)) translateX(18px);
-    will-change: transform, opacity;
+    box-shadow: 0 0 10px rgba(83, 170, 249, 0.8);
 }
 
 .spinner-dot:nth-child(odd) {
     background: #00e5ff;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.8);
 }
 
 .loading-text {
@@ -429,6 +431,7 @@ export default {
     font-size: 16px;
     font-weight: 500;
     letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(83, 170, 249, 0.6);
 }
 
 .loading-dots i {
@@ -470,7 +473,7 @@ export default {
 /* ========== 淡入淡出（局部内容交换用不透明度避免跳变，问题7） ========== */
 .loading-fade-enter-active,
 .loading-fade-leave-active {
-    transition: opacity 0.3s ease;
+    transition: opacity 0.4s ease;
 }
 
 .loading-fade-enter,
@@ -483,17 +486,17 @@ export default {
     100% { transform: rotate(360deg); }
 }
 
+/* 减小明暗与尺寸反差，负延迟使首次展示即处于错峰呼吸状态。 */
 @keyframes dotPulse {
     0%, 100% {
-        opacity: 0.3;
-        transform: rotate(calc((var(--i) - 1) * 45deg)) translateX(18px) scale(0.6);
+        opacity: 0.55;
+        transform: rotate(calc((var(--i) - 1) * 45deg)) translateX(18px) scale(0.85);
     }
     50% {
-        opacity: 1;
-        transform: rotate(calc((var(--i) - 1) * 45deg)) translateX(18px) scale(1.2);
+        opacity: 0.95;
+        transform: rotate(calc((var(--i) - 1) * 45deg)) translateX(18px) scale(1.05);
     }
 }
-
 @keyframes dotBlink {
     0%, 20% { opacity: 0; }
     50% { opacity: 1; }
@@ -506,10 +509,7 @@ export default {
     .spinner-ring--inner {
         animation-duration: 4s; /* 保留极缓的旋转作为加载指示，避免完全静止让人误以为卡死 */
     }
-    .spinner-dot {
-        animation: none;
-        opacity: 0.85;
-    }
+    /* 中心圆点保留与 index.vue 一致的透明度脉冲。 */
     .loading-dots i {
         animation: none;
         opacity: 1;
