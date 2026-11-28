@@ -5,8 +5,8 @@
     <button type="button" :disabled="batchBusy" @click="loadBoth">并发加载两类数据</button>
     <p v-if="error" role="alert">{{ error }}</p>
     <Loading ref="loader" :fullscreen="false" :delay="300"
-      :min-duration="200" :timeout="20000" size="small"
-      text="正在加载" @timeout="onTimeout">
+      :min-duration="200" :timeout="0" size="small"
+      text="正在加载">
       <div class="content">
         <pre>{{ result }}</pre>
         <pre>{{ details }}</pre>
@@ -103,10 +103,6 @@ export default {
         if (controller) this.controllers.delete(controller);
         if (!this.disposed) this.batchBusy = false;
       }
-    },
-    onTimeout() {
-      // 原组件超时不重置计数，这里只展示错误；不能把它当作网络超时。
-      this.error = '加载展示超时，请检查网络请求；当前组件存在超时后恢复限制';
     }
   }
 };

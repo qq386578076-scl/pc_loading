@@ -27,7 +27,7 @@ loading加载
 <template>
   <div>
     <button :disabled="busy" @click="load">加载</button>
-    <Loading :loading="busy" @timeout="onTimeout" />
+    <Loading :loading="busy" :timeout="0" />
     <p v-if="error" role="alert">{{ error }}</p>
   </div>
 </template>
@@ -45,14 +45,13 @@ export default {
       try { this.result = await this.fetchData(); }
       catch (error) { this.error = error.message || '加载失败'; }
       finally { this.busy = false; }
-    },
-    onTimeout() { this.error = '加载展示超时，请检查请求状态'; }
+    }
   }
 };
 </script>
 ```
 
-以上仅用于单请求；组件超时不会取消 `fetchData`。生产调用方还需根据请求库增加取消和卸载保护，完整示例见 `examples/Usage.vue`。
+以上仅用于单请求。快速示例与 `examples/Usage.vue` 都用 `:timeout="0"` 关闭遮罩的展示超时，等请求成功或失败后再结束加载；并发示例会等所有请求结束。组件默认的 20 秒展示超时不变。若请求可能一直挂起，请在请求层配置超时或取消；生产调用方还需处理组件卸载。
 
 也可在入口注册 `Vue.component('Loading', Loading)`。原项目 `@/components/loading` 默认解析 `index.vue`，不会自动加载 `indexs.vue`；需显式导入本文件。
 
